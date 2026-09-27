@@ -335,6 +335,63 @@ async def disable_serve() -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------
+# startup auto-enable
+# --------------------------------------------------------------------------
+
+#: Default port used when auto-enabling at startup before the ASGI server
+#: reports its bound port.  The sidecar normally runs on 8000.
+_DEFAULT_SERVE_PORT = 8000
+
+
+async def auto_enable_serve(port: int = _DEFAULT_SERVE_PORT) -> dict[str, Any]:
+    """Auto-enable Tailscale Serve on startup if ready and not already active.
+
+    This is called once during ``_start_optional_services`` — it must never
+    raise because a failure here should not prevent the sidecar from starting.
+
+    Returns a dict with an ``action`` key: ``"already_enabled"``,
+    ``"enabled"``, ``"skipped"`` (Tailscale not ready), or ``"error"``.
+    """
+    try:
+        status = await get_status()
+        tailscale = status["tailscale"]
+        serve = status.get("serve", {})
+
+        if not tailscale.get("installed") or tailscale.get("error"):
+            logger.debug("remote_use_auto_enable_skip reason=tailscale_not_ready")
+            return {"action": "skipped", "reason": "tailscale_not_ready"}
+
+        if not tailscale.get("logged_in"):
+            logger.debug("remote_use_auto_enable_skip reason=not_logged_in")
+            return {"action": "skipped", "reason": "not_logged_in"}
+
+        if serve.get("enabled"):
+            logger.info(
+                "remote_use_auto_enable action=already_enabled url={}",
+                serve.get("url"),
+            )
+            return {"action": "already_enabled", "url": serve.get("url")}
+
+        result = await enable_serve(port)
+        result_tail = result.get("tailscale", {})
+        if result_tail.get("error"):
+            logger.warning(
+                "remote_use_auto_enable action=error error={}",
+                result_tail["error"],
+            )
+            return {"action": "error", "error": result_tail["error"]}
+
+        logger.info(
+            "remote_use_auto_enable action=enabled url={}",
+            result.get("serve", {}).get("url"),
+        )
+        return {"action": "enabled", "url": result.get("serve", {}).get("url")}
+    except Exception as exc:
+        logger.debug("remote_use_auto_enable_skip error={}", exc)
+        return {"action": "error", "error": str(exc)}
+
+
+# --------------------------------------------------------------------------
 # single-device session lock
 # --------------------------------------------------------------------------
 

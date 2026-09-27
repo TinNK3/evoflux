@@ -163,3 +163,42 @@ export function useDisableRemoteUseMutation() {
 export function useReleaseRemoteUseLockMutation() {
   return useRemoteUseActionMutation('release')
 }
+
+// ── /settings/remote-use (auto-enable preference) ──────────────────────────
+
+export interface RemoteUseSettings {
+  auto_enable: boolean
+}
+
+export const remoteUseSettingsKeys = {
+  settings: () => ['remote-use', 'settings'] as const,
+}
+
+export function useRemoteUseSettingsQuery() {
+  return useQuery({
+    queryKey: remoteUseSettingsKeys.settings(),
+    queryFn: async (): Promise<RemoteUseSettings> => {
+      const res = await fetch(`${apiBaseUrl()}/settings/remote-use`)
+      if (!res.ok) await parseDetailOrThrow(res, 'GET /settings/remote-use')
+      return res.json()
+    },
+  })
+}
+
+export function useRemoteUseSettingsMutation() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (body: RemoteUseSettings): Promise<RemoteUseSettings> => {
+      const res = await fetch(`${apiBaseUrl()}/settings/remote-use`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) await parseDetailOrThrow(res, 'PUT /settings/remote-use')
+      return res.json()
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(remoteUseSettingsKeys.settings(), data)
+    },
+  })
+}

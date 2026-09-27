@@ -54,6 +54,7 @@ from app.api.schemas.settings import (
     ProviderUsageResponse,
     ProviderVisibleModelsRequest,
     FollowUpSettingsBody,
+    RemoteUseSettingsBody,
     TeamSpawnSettingsBody,
     ProviderVisibleModelsResponse,
     ProvidersListBody,
@@ -680,6 +681,30 @@ async def save_follow_up_settings(body: FollowUpSettingsBody) -> FollowUpSetting
     cfg.follow_up.delivery = body.delivery
     save_runtime_settings(cfg)
     return FollowUpSettingsBody(delivery=cfg.follow_up.delivery)
+
+
+# Remote use / Phone access (Settings -> Phone access tab)
+
+
+def _remote_use_settings_body() -> dict[str, bool]:
+    cfg = load_runtime_settings()
+    return {"auto_enable": cfg.remote_use.auto_enable}
+
+
+@router.get("/remote-use")
+async def get_remote_use_settings() -> dict[str, bool]:
+    return _remote_use_settings_body()
+
+
+@router.put("/remote-use")
+async def save_remote_use_settings(body: RemoteUseSettingsBody) -> dict[str, bool]:
+    try:
+        cfg = load_runtime_settings()
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    cfg.remote_use.auto_enable = body.auto_enable
+    save_runtime_settings(cfg)
+    return _remote_use_settings_body()
 
 
 # Providers (Settings -> Providers tab)

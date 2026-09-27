@@ -16,6 +16,8 @@ import {
   useDisableRemoteUseMutation,
   useEnableRemoteUseMutation,
   useReleaseRemoteUseLockMutation,
+  useRemoteUseSettingsMutation,
+  useRemoteUseSettingsQuery,
   useRemoteUseStatusQuery,
 } from '@/api/client/remoteUse'
 import { SettingsCallout, SettingsGroup, SettingsPage, SettingsRow } from '@/components/settings/SettingsLayout'
@@ -43,6 +45,8 @@ export function RemoteUseSettingsPage() {
   const enableM = useEnableRemoteUseMutation()
   const disableM = useDisableRemoteUseMutation()
   const releaseM = useReleaseRemoteUseLockMutation()
+  const settingsQ = useRemoteUseSettingsQuery()
+  const settingsM = useRemoteUseSettingsMutation()
   const [copied, setCopied] = useState(false)
 
   const status = statusQ.data
@@ -137,6 +141,17 @@ export function RemoteUseSettingsPage() {
       </SettingsGroup>
 
       <SettingsGroup title="Tunnel">
+        <SettingsRow
+          label="Auto-enable on startup"
+          description="Automatically activate phone access when Tailscale is running and signed in."
+          control={
+            <Switch
+              checked={settingsQ.data?.auto_enable ?? true}
+              disabled={settingsQ.isLoading || settingsM.isPending}
+              onCheckedChange={(next) => settingsM.mutate({ auto_enable: next })}
+            />
+          }
+        />
         <SettingsRow
           label="Phone access"
           description={

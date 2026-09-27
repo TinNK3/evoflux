@@ -172,6 +172,21 @@ async def _start_optional_services(app: FastAPI, process_started: float) -> None
         )
     _log_startup_timing("dream_scheduler", phase_started, process_started)
 
+    # ── Auto-enable Tailscale Serve for phone access ─────────────────
+    phase_started = perf_counter()
+    try:
+        if runtime_settings.remote_use.auto_enable:
+            from app.services.remote_use_service import auto_enable_serve
+
+            result = await auto_enable_serve()
+            logger.info(
+                "remote_use_auto_enable action={}",
+                result.get("action"),
+            )
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("remote_use_auto_enable_skip error={}", exc)
+    _log_startup_timing("remote_use_auto_enable", phase_started, process_started)
+
     app.state.optional_services_ready = True
     logger.info(
         "optional_services_ready total_ms={}",

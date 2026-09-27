@@ -297,6 +297,19 @@ class MemoryExtractionSettings(BaseModel):
     model: str | None = None
 
 
+class RemoteUseSettings(BaseModel):
+    """Phone access via Tailscale Serve.
+
+    ``auto_enable`` activates the serve tunnel automatically on startup
+    when Tailscale is installed, the user is logged in, and HTTPS certs
+    are available.  Users may toggle this off in Settings → Phone access.
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    auto_enable: bool = True
+
+
 class RuntimeSettings(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -319,6 +332,7 @@ class RuntimeSettings(BaseModel):
     conductor: ConductorSettings = Field(default_factory=ConductorSettings)
     team_spawn: TeamSpawnModeSettings = Field(default_factory=TeamSpawnModeSettings)
     follow_up: FollowUpSettings = Field(default_factory=FollowUpSettings)
+    remote_use: RemoteUseSettings = Field(default_factory=RemoteUseSettings)
 
 
 def follow_up_delivery_default() -> str:

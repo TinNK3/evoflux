@@ -24,6 +24,14 @@ class FollowUpSettingsBody(BaseModel):
     delivery: Literal["steer", "queue"] = "queue"
 
 
+class RemoteUseSettingsBody(BaseModel):
+    """Phone access auto-enable preference."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    auto_enable: bool = True
+
+
 class SandboxSettingsBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
